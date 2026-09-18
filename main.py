@@ -1,8 +1,20 @@
+
+
+
 from fastapi import FastAPI , HTTPException
+
+from pydantic import BaseModel
 
 app = FastAPI()
 
+
 orders = []
+
+class Order(BaseModel):
+    orderID: str
+    amount: float
+    currency: str
+
 
 @app.get("/")
 
@@ -17,12 +29,13 @@ def home():
 
 
 @app.post("/orders")
-def create_order(order:dict):
+def create_order(order:Order):
+    order_data = order.model_dump()
     orders.append(order)
 
     return{
         "message": "Order Created Successfully.",
-        "order": order
+        "order": order_data
     }
 
 
@@ -45,5 +58,5 @@ def get_orders(orderID: str):
 
     raise HTTPException(
         status_code=404,
-        detail="Order nahi mila."
+        detail=f"Order with ID '{orderID}' not found."
     )
