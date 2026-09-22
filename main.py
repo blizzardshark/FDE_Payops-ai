@@ -3,7 +3,9 @@
 
 from fastapi import FastAPI , HTTPException
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from typing import Literal
 
 app = FastAPI()
 
@@ -12,8 +14,8 @@ orders = []
 
 class Order(BaseModel):
     orderID: str
-    amount: float
-    currency: str
+    amount: float = Field(gt=0)
+    currency: Literal["INR","USD","EUR"]
 
 
 @app.get("/")
@@ -29,9 +31,18 @@ def home():
 
 
 @app.post("/orders")
-def create_order(order:Order):
+def create_order(order: Order):
     order_data = order.model_dump()
-    orders.append(order)
+
+    for existing_order in orders :
+        if existing_order["orderID"] == order_data["orderID"]:
+
+           raise HTTPException(
+               status_code = 409,
+               detail=f"Order with ID'{order_data['orderID']}'already exists."
+           )
+
+    orders.append(order_data)
 
     return{
         "message": "Order Created Successfully.",
