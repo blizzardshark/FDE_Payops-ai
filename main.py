@@ -17,6 +17,9 @@ class Order(BaseModel):
     amount: float = Field(gt=0)
     currency: Literal["INR","USD","EUR"]
 
+class OrderUpdate(BaseModel):
+    amount:float|None = Field(default=None,gt=0)
+    currency: Literal["INR","USD","EUR"]|None=None
 
 @app.get("/")
 
@@ -66,6 +69,44 @@ def get_orders(orderID: str):
     for order in orders:
         if order["orderID"] == orderID:
             return order
+
+    raise HTTPException(
+        status_code=404,
+        detail=f"Order with ID '{orderID}' not found."
+    )
+
+
+# Partially Update karne ke liye
+@app.patch("/orders/{orderID}")
+def update_order(orderID:str , updated_order: OrderUpdate):
+
+   for order in orders:
+
+       if order["orderID"] == orderID:
+          update_data = updated_order.model_dump(exclude_none=True)
+          order.update(update_data)
+
+          return{
+            "message":"Order updated successfully.",
+            "order": order
+          }
+
+   raise HTTPException(
+        status_code = 404,
+        detail= f"Order with ID '{orderID}' not found."
+    )
+
+# Existing order delete karna
+@app.delete("/orders/{orderID}")
+def delete_order(orderID: str):
+
+    for order in orders:
+        if order["orderID"] == orderID:
+            orders.remove(order)
+
+            return{
+                "message":f"Order '{orderID}' deleted successfully."
+            }
 
     raise HTTPException(
         status_code=404,
